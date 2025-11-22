@@ -1,6 +1,6 @@
 <?php
 
-namespace common\models;
+namespace api\models;
 
 use Yii;
 use yii\base\NotSupportedException;
@@ -209,5 +209,21 @@ class User extends ActiveRecord implements IdentityInterface
     public function removePasswordResetToken()
     {
         $this->password_reset_token = null;
+    }
+
+    /**
+     * {@inheritdoc}
+     * Определяет поля, которые будут возвращаться в REST API
+     */
+    public function fields()
+    {
+        return [
+            'id',
+            'username',
+            'email',
+            'status',
+            'created_at',
+            'updated_at',
+        ];
     }
 }
