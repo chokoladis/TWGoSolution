@@ -2,6 +2,7 @@
 
 namespace api\controllers;
 
+use api\models\Book;
 use api\models\User;
 use yii\rest\ActiveController;
 use yii\filters\Cors;
@@ -13,7 +14,7 @@ use yii\web\Response;
  */
 class BookController extends ActiveController
 {
-    public $modelClass = User::class;
+    public $modelClass = Book::class;
 
     /**
      * {@inheritdoc}

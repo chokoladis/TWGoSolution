@@ -3,6 +3,7 @@
 namespace api\controllers;
 
 use api\models\Book;
+use api\models\Library;
 use api\models\User;
 use yii\rest\ActiveController;
 use yii\filters\Cors;
@@ -12,9 +13,9 @@ use yii\web\Response;
 /**
  * User controller for REST API
  */
-class BookController extends ActiveController
+class LibraryController extends ActiveController
 {
-    public $modelClass = Book::class;
+    public $modelClass = Library::class;
 
     /**
      * {@inheritdoc}

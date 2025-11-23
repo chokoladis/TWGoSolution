@@ -12,9 +12,11 @@ return [
         'mailer' => [
             'class' => \yii\symfonymailer\Mailer::class,
             'viewPath' => '@common/mail',
-            // send all mails to a file by default.
             'useFileTransport' => true,
-
+        ],
+        'jwt' => [
+            'class' => \sizeg\jwt\Jwt::class,
+            'key' => '404679d33d542c0db81609f3a0a4bf6592dcebd6871565c6a7f81e1348840418',
         ],
     ],
 ];

@@ -8,23 +8,10 @@ use yii\behaviors\TimestampBehavior;
 use yii\db\ActiveRecord;
 use yii\web\IdentityInterface;
 
-/**
- * User model
- *
- * @property integer $id
- * @property string $username
- * @property string $password_hash
- * @property string $password_reset_token
- * @property string $verification_token
- * @property string $email
- * @property string $auth_key
- * @property integer $status
- * @property integer $created_at
- * @property integer $updated_at
- * @property string $password write-only password
- */
 class User extends ActiveRecord implements IdentityInterface
 {
+    public $password;
+
     const STATUS_DELETED = 0;
     const STATUS_INACTIVE = 9;
     const STATUS_ACTIVE = 10;
@@ -36,6 +23,11 @@ class User extends ActiveRecord implements IdentityInterface
     public static function tableName()
     {
         return '{{%user}}';
+    }
+
+    public function getUniqueId()
+    {
+        return $this->getId();
     }
 
     /**
@@ -54,6 +46,9 @@ class User extends ActiveRecord implements IdentityInterface
     public function rules()
     {
         return [
+            [['login', 'email', 'password'], 'required'],
+            [['login', 'password'], 'string'],
+            [['email'], 'email'],
             ['status', 'default', 'value' => self::STATUS_INACTIVE],
             ['status', 'in', 'range' => [self::STATUS_ACTIVE, self::STATUS_INACTIVE, self::STATUS_DELETED]],
         ];
@@ -69,10 +64,43 @@ class User extends ActiveRecord implements IdentityInterface
 
     /**
      * {@inheritdoc}
+     * Находит пользователя по JWT токену
+     * 
+     * @param string $token JWT токен в виде строки
+     * @param string|null $type Тип токена (не используется для JWT)
+     * @return static|null Пользователь или null если не найден
      */
     public static function findIdentityByAccessToken($token, $type = null)
     {
-        throw new NotSupportedException('"findIdentityByAccessToken" is not implemented.');
+        try {
+            $jwt = \Yii::$app->jwt;
+            $signer = $jwt->getSigner('HS256');
+            $key = $jwt->getKey();
+            
+            // Парсим токен
+            $parsedToken = $jwt->getParser()->parse((string) $token);
+            
+            // Проверяем подпись
+            if (!$parsedToken->verify($signer, $key)) {
+                return null;
+            }
+            
+            // Проверяем что токен не истек
+            if ($parsedToken->isExpired()) {
+                return null;
+            }
+            
+            // Получаем ID пользователя из токена
+            $userId = $parsedToken->getClaim('uid');
+            
+            // Находим пользователя по ID
+            return static::findIdentity($userId);
+            
+        } catch (\Exception $e) {
+            // Если произошла ошибка при парсинге токена, возвращаем null
+            \Yii::error('JWT token parsing error: ' . $e->getMessage());
+            return null;
+        }
     }
 
     /**
@@ -81,9 +109,9 @@ class User extends ActiveRecord implements IdentityInterface
      * @param string $username
      * @return static|null
      */
-    public static function findByUsername($username)
+    public static function findByLogin($login)
     {
-        return static::findOne(['username' => $username, 'status' => self::STATUS_ACTIVE]);
+        return static::findOne(['login' => $login, 'status' => self::STATUS_ACTIVE]);
     }
 
     /**
@@ -219,11 +247,28 @@ class User extends ActiveRecord implements IdentityInterface
     {
         return [
             'id',
-            'username',
+            'login',
             'email',
             'status',
             'created_at',
             'updated_at',
         ];
+    }
+
+    public function beforeSave($insert)
+    {
+        if (parent::beforeSave($insert)) {
+
+            if ($this->password) {
+                $this->setPassword($this->password);
+            }
+
+            if ($this->isNewRecord) {
+                $this->generateAuthKey();
+            }
+
+            return true;
+        }
+        return false;
     }
 }

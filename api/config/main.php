@@ -16,7 +16,6 @@ return [
             'parsers' => [
                 'application/json' => 'yii\web\JsonParser',
             ],
-            // важно для JWT в Authorization: Bearer ...
             'enableCookieValidation' => false,
         ],
 
@@ -27,19 +26,21 @@ return [
                 $response = $event->sender;
                 // Устанавливаем Content-Type для JSON
                 $response->headers->set('Content-Type', 'application/json; charset=UTF-8');
-                if ($response->data !== null && $response->isSuccessful) {
-                    // единый формат успешного ответа
+                if ($response->data !== null) {
                     $response->data = [
-                        'success' => true,
                         'data' => $response->data,
+                    ];
+                } elseif (!empty($response->errors)) {
+                    $response->errors = [
+                        'errors' => $response->errors,
                     ];
                 }
             },
         ],
 
         'user' => [
-            'identityClass' => 'common\models\User',
-            'enableSession' => false,           // REST — stateless
+            'identityClass' => 'api\models\User', // Используем модель User из API
+            'enableSession' => false,           // REST — stateless (без сессий)
             'enableAutoLogin' => false,
         ],
 
@@ -64,26 +65,23 @@ return [
             'enableStrictParsing' => true,
             'showScriptName' => false,
             'rules' => [
-                [
-                    'class' => 'yii\rest\UrlRule',
-                    'controller' => 'user',
-                    'pluralize' => false,
-                ]
+                'GET users' => 'user/index',
+                'POST users' => 'user/create',
+                'POST auth/login' => 'user/login',
+                'GET users/<id>' => 'user/view',
+//                [
+//                    'class' => 'yii\rest\UrlRule',
+//                    'controller' => 'book',
+//                    'pluralize' => false,
+//                ],
+//                [
+//                    'class' => 'yii\rest\UrlRule',
+//                    'controller' => 'library',
+//                    'pluralize' => false,
+//                ]
             ],
         ],
-
-        // JWT компонент
-//        'jwt' => [
-//            'class' => \sizeg\jwt\Jwt::class,
-//            'key' => 'твой_секретный_ключ_256_бит_или_больше',
-//            'jwtValidationData' => \api\components\JwtValidationData::class,
-//        ],
     ],
 
     'params' => $params,
-//
-//    'as authenticator' => [
-//        'class' => \sizeg\jwt\JwtHttpBearerAuth::class,
-//        'except' => ['auth/login', 'auth/refresh', 'options'], // публичные методы
-//    ],
 ];
