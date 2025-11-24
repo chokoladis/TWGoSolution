@@ -39,8 +39,8 @@ return [
         ],
 
         'user' => [
-            'identityClass' => 'api\models\User', // Используем модель User из API
-            'enableSession' => false,           // REST — stateless (без сессий)
+            'identityClass' => 'api\models\User',
+            'enableSession' => false,
             'enableAutoLogin' => false,
         ],
 
@@ -65,19 +65,12 @@ return [
             'enableStrictParsing' => true,
             'showScriptName' => false,
             'rules' => [
-                'GET users' => 'user/index',
                 'POST users' => 'user/create',
                 'POST auth/login' => 'user/login',
                 'GET users/<id>' => 'user/view',
-//                [
-//                    'class' => 'yii\rest\UrlRule',
+
 //                    'controller' => 'book',
-//                    'pluralize' => false,
-//                ],
-//                [
-//                    'class' => 'yii\rest\UrlRule',
 //                    'controller' => 'library',
-//                    'pluralize' => false,
 //                ]
             ],
         ],

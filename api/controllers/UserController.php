@@ -2,14 +2,15 @@
 
 namespace api\controllers;
 
+use api\models\errors\CommonError;
 use api\models\LoginForm;
 use api\models\User;
+use api\services\AuthService;
 use api\services\TokenService;
 use yii\rest\ActiveController;
 use yii\filters\Cors;
 use yii\filters\ContentNegotiator;
 use yii\web\Response;
-use yii\web\ServerErrorHttpException;
 
 /**
  * User controller for REST API
@@ -17,6 +18,15 @@ use yii\web\ServerErrorHttpException;
 class UserController extends ActiveController
 {
     public $modelClass = User::class;
+
+    public function actions()
+    {
+        $actions = parent::actions();
+
+        unset($actions['create'], $actions['login']);
+
+        return $actions;
+    }
 
     /**
      * {@inheritdoc}
@@ -50,80 +60,87 @@ class UserController extends ActiveController
 
         $behaviors['authenticator'] = [
             'class' => \sizeg\jwt\JwtHttpBearerAuth::class,
-            'except' => ['index', 'create', 'login'],
+            'except' => ['create', 'login'],
         ];
 
         return $behaviors;
     }
 
-    public function actionCreate($id)
+    public function actionCreate()
     {
-//        var_dump($id);
         $model = new $this->modelClass();
 
-        try {
+        $response = \Yii::$app->getResponse();
 
-//            todo validation
+        try {
             if ($model->load(\Yii::$app->getRequest()->getBodyParams(), '')){
 
+                $authService = new AuthService;
+                [$isValid, $errors] = $authService->validateRequestRegister($model);
+
+                if (!$isValid) {
+                    return $response->setStatusCode(400)->data = [
+                        'errors' => $errors
+                    ];
+                }
+
                 if ($model->save()) {
-                    var_dump('save');
-                    TokenService::generateToken($model);
-//                    $response = \Yii::$app->getResponse();
-//                    $response->setStatusCode(201);
-//                    $response->getHeaders()->set('Location', \yii\helpers\Url::toRoute([$this->viewAction, 'id' => $id], true));
+
+                    return $response->setStatusCode(201)
+                        ->data = ['token' => TokenService::generateToken($model)];
+
                 } elseif (!$model->hasErrors()) {
-                    throw new ServerErrorHttpException('Failed to create the object for unknown reason.');
+                    return $response->setStatusCode(400)->data = [
+                        'errors' => [
+                            new CommonError('Не удалось сохранить данные','error_saved_data')
+                            //array_map(function ($error) {}, $model->getErrors())
+                        ]
+                    ];
                 }
             }
 
+
+            return $response->setStatusCode(400)->data = ['errors' => [
+                new CommonError('Не удалось принять данные','error_getting_data')
+            ]];
+
         } catch (\Throwable $exception) {
-            var_dump($exception->getMessage(), $exception->getFile(), $exception->getLine());
-            die();
+//            dump($exception->getMessage(), $exception->getFile(), $exception->getLine());
+//            die();
+            return $response->setStatusCode(400)->data = [
+                'errors' => [
+                    new CommonError('Произошла непредвиденная ситуация','system_error')
+                ]
+            ];
         }
-
-
-//        return $model;
-        return $this->asJson([
-//            'token' => ,
-        ]);
     }
 
     /**
-     * Авторизация пользователя и выдача JWT токена
-     * 
      * @return array JSON ответ с токеном или ошибками
      */
     public function actionLogin()
     {
+        $response = \Yii::$app->getResponse();
+
         $model = new LoginForm();
 
         if ($model->load(\Yii::$app->getRequest()->getBodyParams(), '')) {
             if ($model->validate() && $model->login()) {
                 $user = $model->getUserModel();
 
-                \Yii::$app->response->setStatusCode(200);
-                return [
+                return $response->setStatusCode(200)->data = [
                     'token' => TokenService::generateToken($user),
-                    'user' => [
-                        'id' => $user->id,
-                        'login' => $user->login,
-                        'email' => $user->email,
-                    ],
                 ];
             } else {
-                // Ошибки валидации
-                \Yii::$app->response->setStatusCode(422);
-                return [
+
+                return $response->setStatusCode(422)->data = [
                     'errors' => $model->errors,
                 ];
             }
         }
 
-        // Если данные не загружены
-        \Yii::$app->response->setStatusCode(400);
-        return [
-            'error' => 'Invalid request. Provide login and password.',
+        return $response->setStatusCode(400)->data = [
+            'errors' => [new CommonError('Не удалось принять данные','error_getting_data')]
         ];
     }
 }
