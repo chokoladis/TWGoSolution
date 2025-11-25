@@ -133,7 +133,7 @@ class UserController extends ActiveController
                 ];
             } else {
 
-                return $response->setStatusCode(422)->data = [
+                return $response->setStatusCode(400)->data = [
                     'errors' => $model->errors,
                 ];
             }

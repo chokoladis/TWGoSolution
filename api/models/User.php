@@ -61,7 +61,7 @@ class User extends ActiveRecord implements IdentityInterface
      */
     public static function findIdentity($id)
     {
-        return static::findOne(['id' => $id, 'status' => self::STATUS_ACTIVE]);
+        return static::findOne(['id' => $id]); //'status' => self::STATUS_ACTIVE
     }
 
     /**
@@ -76,8 +76,10 @@ class User extends ActiveRecord implements IdentityInterface
     {
         try {
             $jwt = \Yii::$app->jwt;
-            $signer = $jwt->getSigner('HS256');
-            $key = $jwt->getKey();
+            
+            // Используем методы компонента для получения signer'а и ключа
+            $signer = $jwt->getSigner(\sizeg\jwt\JwtSigner::HS256);
+            $key = $jwt->getSignerKey();
             
             // Парсим токен
             $parsedToken = $jwt->getParser()->parse((string) $token);
@@ -88,12 +90,12 @@ class User extends ActiveRecord implements IdentityInterface
             }
             
             // Проверяем что токен не истек
-            if ($parsedToken->isExpired()) {
+            if ($parsedToken->isExpired(new \DateTimeImmutable())) {
                 return null;
             }
             
             // Получаем ID пользователя из токена
-            $userId = $parsedToken->getClaim('uid');
+            $userId = $parsedToken->claims()->get('uid');
             
             // Находим пользователя по ID
             return static::findIdentity($userId);
@@ -113,7 +115,8 @@ class User extends ActiveRecord implements IdentityInterface
      */
     public static function findByLogin($login)
     {
-        return static::findOne(['login' => $login, 'status' => self::STATUS_ACTIVE]);
+        // todo accept by email
+        return static::findOne(['login' => $login]); //'status' => self::STATUS_ACTIVE
     }
 
     /**
@@ -130,7 +133,7 @@ class User extends ActiveRecord implements IdentityInterface
 
         return static::findOne([
             'password_reset_token' => $token,
-            'status' => self::STATUS_ACTIVE,
+//            'status' => self::STATUS_ACTIVE,
         ]);
     }
 
@@ -143,7 +146,7 @@ class User extends ActiveRecord implements IdentityInterface
     public static function findByVerificationToken($token) {
         return static::findOne([
             'verification_token' => $token,
-            'status' => self::STATUS_INACTIVE
+//            'status' => self::STATUS_INACTIVE
         ]);
     }
 

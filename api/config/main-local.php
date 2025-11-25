@@ -16,7 +16,9 @@ return [
         ],
         'jwt' => [
             'class' => \sizeg\jwt\Jwt::class,
-            'key' => '404679d33d542c0db81609f3a0a4bf6592dcebd6871565c6a7f81e1348840418',
+            'signer' => \sizeg\jwt\JwtSigner::HS256,
+            'signerKey' => \sizeg\jwt\JwtKey::PLAIN_TEXT,
+            'signerKeyContents' => '404679d33d542c0db81609f3a0a4bf6592dcebd6871565c6a7f81e1348840418',
         ],
     ],
 ];

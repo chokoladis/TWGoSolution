@@ -18,19 +18,21 @@ class TokenService
     public static function generateToken(User $user)
     {
         $jwt = \Yii::$app->jwt;
-        $signer = $jwt->getSigner('HS256');
-        $key = $jwt->getKey();
+
+        $signer = $jwt->getSigner(\sizeg\jwt\JwtSigner::HS256);
+        $key = $jwt->getSignerKey();
+        
         $time = time();
 
         $token = $jwt->getBuilder()
             ->issuedBy(\Yii::$app->request->hostInfo)
             ->permittedFor(\Yii::$app->request->hostInfo)
             ->identifiedBy(uniqid('', true), true)
-            ->issuedAt($time)
-            ->expiresAt($time + 3600 * 24)
+            ->issuedAt(new \DateTimeImmutable('@' . $time))
+            ->expiresAt(new \DateTimeImmutable('@' . ($time + 3600 * 24)))
             ->withClaim('uid', $user->id)
             ->getToken($signer, $key);
 
-        return (string) $token;
+        return $token->toString();
     }
 }

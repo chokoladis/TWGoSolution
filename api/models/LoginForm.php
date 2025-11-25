@@ -41,7 +41,7 @@ class LoginForm extends Model
         if (!$this->hasErrors()) {
             $user = $this->getUser();
             if (!$user || !$user->validatePassword($this->password)) {
-                $this->addError($attribute, 'Incorrect username or password.');
+                $this->addError($attribute, 'Некорректный логин или пароль');
             }
         }
     }
@@ -56,8 +56,6 @@ class LoginForm extends Model
     public function login()
     {
         if ($this->validate()) {
-            // Для REST API не используем сессию, только валидацию
-            // Реальный login будет через JWT токен
             return $this->getUser() !== null;
         }
         
