@@ -2,7 +2,7 @@
 
 namespace api\controllers;
 
-use api\models\errors\CommonError;
+use api\exceptions\DataHandleException;
 use api\models\LoginForm;
 use api\models\User;
 use api\services\AuthService;
@@ -10,6 +10,7 @@ use api\services\TokenService;
 use yii\rest\ActiveController;
 use yii\filters\Cors;
 use yii\filters\ContentNegotiator;
+use yii\web\ForbiddenHttpException;
 use yii\web\Response;
 
 /**
@@ -79,9 +80,7 @@ class UserController extends ActiveController
                 [$isValid, $errors] = $authService->validateRequestRegister($model);
 
                 if (!$isValid) {
-                    return $response->setStatusCode(400)->data = [
-                        'errors' => $errors
-                    ];
+                    throw new DataHandleException(details: $errors);
                 }
 
                 if ($model->save()) {
@@ -90,28 +89,16 @@ class UserController extends ActiveController
                         ->data = ['token' => TokenService::generateToken($model)];
 
                 } elseif (!$model->hasErrors()) {
-                    return $response->setStatusCode(400)->data = [
-                        'errors' => [
-                            new CommonError('Не удалось сохранить данные','error_saved_data')
-                            //array_map(function ($error) {}, $model->getErrors())
-                        ]
-                    ];
+                    throw new DataHandleException('Не удалось сохранить данные');
+//                    $model->getErrors())
                 }
             }
 
-
-            return $response->setStatusCode(400)->data = ['errors' => [
-                new CommonError('Не удалось принять данные','error_getting_data')
-            ]];
+            throw new DataHandleException();
 
         } catch (\Throwable $exception) {
-//            dump($exception->getMessage(), $exception->getFile(), $exception->getLine());
-//            die();
-            return $response->setStatusCode(400)->data = [
-                'errors' => [
-                    new CommonError('Произошла непредвиденная ситуация','system_error')
-                ]
-            ];
+            throw new DataHandleException();
+//                    new CommonError('Произошла непредвиденная ситуация','system_error')
         }
     }
 
@@ -133,14 +120,19 @@ class UserController extends ActiveController
                 ];
             } else {
 
-                return $response->setStatusCode(400)->data = [
-                    'errors' => $model->errors,
-                ];
+                throw new DataHandleException(details: $model->errors);
             }
         }
 
-        return $response->setStatusCode(400)->data = [
-            'errors' => [new CommonError('Не удалось принять данные','error_getting_data')]
-        ];
+        throw new DataHandleException;
+    }
+
+    public function checkAccess($action, $model = null, $params = [])
+    {
+        if ($action === 'view') {
+            if ($model->id !== \Yii::$app->user->id) {
+                throw new ForbiddenHttpException('Нет доступа');
+            }
+        }
     }
 }

@@ -7,6 +7,7 @@ use yii\base\NotSupportedException;
 use yii\behaviors\TimestampBehavior;
 use yii\db\ActiveRecord;
 use yii\web\IdentityInterface;
+use \Lcobucci\JWT\Validation\Constraint\IssuedBy;
 
 class User extends ActiveRecord implements IdentityInterface
 {
@@ -75,32 +76,19 @@ class User extends ActiveRecord implements IdentityInterface
     public static function findIdentityByAccessToken($token, $type = null)
     {
         try {
-            $jwt = \Yii::$app->jwt;
-            
-            // Используем методы компонента для получения signer'а и ключа
-            $signer = $jwt->getSigner(\sizeg\jwt\JwtSigner::HS256);
-            $key = $jwt->getSignerKey();
-            
-            // Парсим токен
-            $parsedToken = $jwt->getParser()->parse((string) $token);
-            
-            // Проверяем подпись
-            if (!$parsedToken->verify($signer, $key)) {
+            $app = Yii::$app;
+
+            if (!$app->jwt->validate($token, new IssuedBy($app->request->hostInfo))) {
                 return null;
             }
+
+            return static::findIdentity(
+                $app->jwt->getParser()
+                    ->parse((string) $token)
+                    ->claims()->get('uid')
+            );
             
-            // Проверяем что токен не истек
-            if ($parsedToken->isExpired(new \DateTimeImmutable())) {
-                return null;
-            }
-            
-            // Получаем ID пользователя из токена
-            $userId = $parsedToken->claims()->get('uid');
-            
-            // Находим пользователя по ID
-            return static::findIdentity($userId);
-            
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             // Если произошла ошибка при парсинге токена, возвращаем null
             \Yii::error('JWT token parsing error: ' . $e->getMessage());
             return null;
