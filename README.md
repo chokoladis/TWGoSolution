@@ -41,11 +41,35 @@
 Код-стиль и структурированность проекта.
 
 
-[//]: # (todo)
 ## Инструкция запуска
-
-SQL дамп базы данных (если нужен).
-Примеры запросов (например, в Postman коллекции или curl).
-
-Будет плюсом:
-Unit-тесты (PHPUnit / Codeception).
+ - запустить миграции || импортировать sql по пути /api/sql/tw_go_solution.sql
+ - примеры запросов:
+#### 1. Авторизация
+```
+curl --location 'http://localhost:8888/api/auth/login' \
+--header 'Content-Type: application/json' \
+--header 'Cookie: _csrf-api=QvDnebLdqBrHLtU3Qlzr4df6uxHXtXfX' \
+--data '{
+    "login": "test123",
+    "password": "test123"
+}'
+```
+#### 2. Добавление книги
+```
+curl --location 'http://localhost:8888/api/books' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0Ojg4ODgiLCJhdWQiOiJodHRwOi8vbG9jYWxob3N0Ojg4ODgiLCJqdGkiOiI2OTI4OWYzOGQ2NjBmMS41NjU0MTY3OSIsImlhdCI6MTc2NDI2OTg4MCwiZXhwIjoxNzY0MzU2MjgwLCJ1aWQiOjIxfQ.7UEyLXPUFMbNZuQnAOmciT1Ortx2YCFh6trjFeLZ4rQ' \
+--header 'Cookie: _csrf-api=esw6ZP6qaLKYjZfkENXPOvr56pagUjQ6' \
+--data '{
+    "title": "buety book",
+    "author": "A.L Linkton",
+    "published_year": 2010
+}'
+```
+#### 3. Просмотр книг постранично
+```
+curl --location 'http://localhost:8888/api/books?limit=2&page=1' \
+--header 'Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0Ojg4ODgiLCJhdWQiOiJodHRwOi8vbG9jYWxob3N0Ojg4ODgiLCJqdGkiOiI2OTI4OWYzOGQ2NjBmMS41NjU0MTY3OSIsImlhdCI6MTc2NDI2OTg4MCwiZXhwIjoxNzY0MzU2MjgwLCJ1aWQiOjIxfQ.7UEyLXPUFMbNZuQnAOmciT1Ortx2YCFh6trjFeLZ4rQ' \
+--header 'Cookie: _csrf-api=esw6ZP6qaLKYjZfkENXPOvr56pagUjQ6' \
+--data ''
+```

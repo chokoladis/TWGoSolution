@@ -1,4 +1,7 @@
 <?php
+
+use api\components\CustomJsonParser;
+
 $params = array_merge(
     require __DIR__ . '/../../common/config/params.php',
 );
@@ -14,7 +17,7 @@ return [
             'csrfParam' => '_csrf-api',
             'baseUrl' => '/api',
             'parsers' => [
-                'application/json' => 'yii\web\JsonParser',
+                'application/json' => CustomJsonParser::class,
             ],
             'enableCookieValidation' => false,
         ],
@@ -24,7 +27,6 @@ return [
             'format' => yii\web\Response::FORMAT_JSON,
             'on beforeSend' => function ($event) {
                 $response = $event->sender;
-                // Устанавливаем Content-Type для JSON
                 $response->headers->set('Content-Type', 'application/json; charset=UTF-8');
                 if ($response->data !== null) {
                     $response->data = [
@@ -45,7 +47,6 @@ return [
         ],
 
         'session' => [
-            // Отключаем куки-сессии
             'name' => 'api-session',
             'savePath' => sys_get_temp_dir(),
         ],
@@ -62,16 +63,19 @@ return [
 
         'urlManager' => [
             'enablePrettyUrl' => true,
-            'enableStrictParsing' => true,
+            'enableStrictParsing' => false,
             'showScriptName' => false,
             'rules' => [
                 'POST users' => 'user/create',
                 'POST auth/login' => 'user/login',
                 'GET users/<id>' => 'user/view',
 
-//                    'controller' => 'book',
-//                    'controller' => 'library',
-//                ]
+                'POST books' => 'book/create',
+                'GET books' => 'book/index',
+                'GET books/<id>' => 'book/view',
+                'PUT books/<id>' => 'book/update',
+                'DELETE books/<id>' => 'book/delete',
+
             ],
         ],
     ],

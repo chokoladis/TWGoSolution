@@ -9,8 +9,6 @@ namespace api\models;
  * @property string $title
  * @property string $author
  * @property int $published_year
- *
- * @property Library[] $libraries
  */
 class Book extends \yii\db\ActiveRecord
 {
@@ -30,9 +28,10 @@ class Book extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['title', 'author', 'published_year'], 'required'],
-            [['published_year'], 'integer'],
-            [['title', 'author'], 'string', 'max' => 255],
+            [['title', 'author', 'published_year'], 'required', 'message' => 'Поле является обязательным'],
+            [['published_year'], 'integer', 'message' => 'Поле должно быть целым числом'],
+            [['title', 'author'], 'string', 'message' => 'Поле должно быть строкой'],
+            [['title', 'author'], 'length' => [1, 255], 'message' => 'Поле принимает значение 1 до 255 символов']
         ];
     }
 
@@ -47,16 +46,6 @@ class Book extends \yii\db\ActiveRecord
             'author' => 'Author',
             'published_year' => 'Published Year',
         ];
-    }
-
-    /**
-     * Gets query for [[Libraries]].
-     *
-     * @return \yii\db\ActiveQuery
-     */
-    public function getLibraries()
-    {
-        return $this->hasMany(Library::class, ['book_id' => 'id']);
     }
 
 }

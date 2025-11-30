@@ -6,6 +6,7 @@ use api\exceptions\DataHandleException;
 use api\models\LoginForm;
 use api\models\User;
 use api\services\AuthService;
+use api\services\JwtHttpBearerService;
 use api\services\TokenService;
 use yii\rest\ActiveController;
 use yii\filters\Cors;
@@ -60,7 +61,7 @@ class UserController extends ActiveController
         ];
 
         $behaviors['authenticator'] = [
-            'class' => \sizeg\jwt\JwtHttpBearerAuth::class,
+            'class' => JwtHttpBearerService::class,
             'except' => ['create', 'login'],
         ];
 

@@ -3,7 +3,8 @@
 namespace api\controllers;
 
 use api\models\Book;
-use api\models\User;
+use api\services\JwtHttpBearerService;
+use yii\helpers\ArrayHelper;
 use yii\rest\ActiveController;
 use yii\filters\Cors;
 use yii\filters\ContentNegotiator;
@@ -23,7 +24,6 @@ class BookController extends ActiveController
     {
         $behaviors = parent::behaviors();
 
-        // Переопределяем ContentNegotiator чтобы JSON был по умолчанию
         $behaviors['contentNegotiator'] = [
             'class' => ContentNegotiator::class,
             'formats' => [
@@ -35,18 +35,40 @@ class BookController extends ActiveController
             ],
         ];
 
-        // Добавляем CORS фильтр
         $behaviors['cors'] = [
             'class' => Cors::class,
             'cors' => [
                 'Origin' => ['*'],
-                'Access-Control-Request-Method' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'],
+                'Access-Control-Request-Method' => ['GET', 'POST', 'PUT', 'DELETE'],
                 'Access-Control-Request-Headers' => ['*'],
                 'Access-Control-Allow-Credentials' => true,
                 'Access-Control-Max-Age' => 86400,
             ],
         ];
 
+        $behaviors['authenticator'] = [
+            'class' => JwtHttpBearerService::class,
+            'except' => ['index', 'view', ],
+        ];
+
         return $behaviors;
+    }
+
+    public function actions()
+    {
+        return ArrayHelper::merge(parent::actions(), [
+            'index' => [
+                'pagination' => [
+                    'pageSizeParam' => 'limit',
+                    'pageParam' => 'page',
+                    'defaultPageSize' => 10,
+                ],
+                'sort' => [
+                    'defaultOrder' => [
+                        'id' => SORT_DESC,
+                    ],
+                ],
+            ],
+        ]);
     }
 }
